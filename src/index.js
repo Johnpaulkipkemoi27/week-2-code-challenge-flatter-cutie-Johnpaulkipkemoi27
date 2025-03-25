@@ -1,70 +1,84 @@
-// Your code here
+const baseUrl = "https://flattacuties.vercel.app/characters";
 
-const baseUrl = "https://flatacuriees-3caz.vercel.app/characters";
-
-
-//Fetch Character Names
-function fetchCharacte () {
+// Fetch Character Names
+function fetchCharacterNames() {
     return fetch(baseUrl)
-    .then(response => response.json())
+        .then(response => response.json());
 }
 
 function renderCharacterNames(character) {
     const characterBar = document.getElementById("character-bar");
     const span = document.createElement("span");
-    span.innerHTML = character.name;
-    characterBar.appendChild(span);
+    span.innerText = character.name;
     span.dataset.id = character.id;
     span.addEventListener("click", onSpanCharacterClick);
-};
-
-fetchCharacterNames().then(characters => {
-    characters.forEach(character => {
-        renderCharacterNames(character);
-    })
-})
-
-
-//Fetching character details
-function fetchCharacterDetails (id) {
-    return fetch(baseUrl + `/${id}`)
-    .then(response => response.json())
+    characterBar.appendChild(span);
 }
 
+fetchCharacterNames().then(characters => {
+    characters.forEach(character => renderCharacterNames(character));
+});
 
-function onSpanCharacterClick (event) {
-    fetchCharacterDetails(event.target.dataset.id)
-    .then(renderCharacterDetails);
+// Fetch Character Details
+function fetchCharacterDetails(id) {
+    return fetch(`${baseUrl}/${id}`)
+        .then(response => response.json());
+}
+
+function onSpanCharacterClick(event) {
+    const characterId = event.target.dataset.id;
+    fetchCharacterDetails(characterId).then(renderCharacterDetails);
 }
 
 function renderCharacterDetails(character) {
-    const characterInfo = document.getElementById("detailed-info");
     const charName = document.getElementById("name");
-    charName.innerText = character.name
-
     const charImg = document.getElementById("image");
-    charImg.src = character.image
-
     const charVotes = document.getElementById("vote-count");
-    charVotes.innerText = character.votes
 
+    charName.innerText = character.name;
+    charImg.src = character.image;
+    charVotes.innerText = character.votes;
+
+    // Store the currently selected character ID for voting updates
+    document.getElementById("votes-form").dataset.characterId = character.id;
 }
 
-//Form Submission and Updating Votes
+// Handle Form Submission and Update Votes
 document.getElementById("votes-form").addEventListener("submit", (event) => {
-    event.preventDefault(); 
+    event.preventDefault();
+
     const votesForm = event.target;
-    const votes = document.getElementById("vote-count")
-    votes.innerText = parseInt(votesForm.votes.value) + parseInt(votes.innerText);
+    const votesInput = votesForm.querySelector('input[name="votes"]');
+    const addedVotes = parseInt(votesInput.value);
+    const voteCountElement = document.getElementById("vote-count");
+
+    if (!addedVotes || isNaN(addedVotes)) {
+        alert("Please enter a valid number of votes.");
+        return;
+    }
+
+    const updatedVotes = parseInt(voteCountElement.innerText) + addedVotes;
+    voteCountElement.innerText = updatedVotes;
+
+    const characterId = votesForm.dataset.characterId;
+
+    // Send PATCH request to update votes on the server
+    fetch(`${baseUrl}/${characterId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ votes: updatedVotes }),
+    });
+
     votesForm.reset();
-})
+});
 
-//Reset Button Functionality
+// Reset Button Functionality
 document.getElementById("reset-btn").addEventListener("click", () => {
-    document.getElementById("vote-count").innerText = 0;
-})
+    const voteCountElement = document.getElementById("vote-count");
+    voteCountElement.innerText = 0;
+});
 
+// Ensure the script runs after the DOM has loaded
 document.addEventListener("DOMContentLoaded", function () {
     fetchCharacterNames();
-    fetchCharacterDetails();
-})
+});
