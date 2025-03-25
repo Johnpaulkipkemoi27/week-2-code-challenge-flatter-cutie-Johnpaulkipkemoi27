@@ -82,3 +82,4 @@ document.getElementById("reset-btn").addEventListener("click", () => {
 document.addEventListener("DOMContentLoaded", function () {
     fetchCharacterNames();
 });
+
